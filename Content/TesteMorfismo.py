@@ -7,8 +7,8 @@ import os
 # --------------------------------------------------------------------------
 
 # 1. Nomes dos arquivos de imagem (devem ter as mesmas dimensões)
-ARQUIVO_IMAGEM_INICIAL = 'crianca.pgm'  # Substitua pela sua imagem de infância
-ARQUIVO_IMAGEM_FINAL = 'adulto.pgm'    # Substitua pela sua imagem atual
+ARQUIVO_IMAGEM_INICIAL = './Imagens/crianca.pgm'  # Substitua pela sua imagem de infância
+ARQUIVO_IMAGEM_FINAL = './Imagens/adulto.pgm'    # Substitua pela sua imagem atual
 
 # 2. Número de frames para a animação do morphing
 NUM_FRAMES = 60 # Um valor como 60 gera uma animação de ~2 segundos a 30fps
@@ -22,21 +22,25 @@ NUM_FRAMES = 60 # Um valor como 60 gera uma animação de ~2 segundos a 30fps
 #
 #    ===> SUBSTITUA ESTES PONTOS PELOS SEUS <===
 lista_pontos_inicial = np.array([
-    [100, 120], # Ex: olho esquerdo
-    [200, 118], # Ex: olho direito
-    [150, 180], # Ex: ponta do nariz
-    [110, 220], # Ex: canto esquerdo da boca
-    [190, 218], # Ex: canto direito da boca
-    [148, 250], # Ex: queixo
+    [256,87], #Ponta Esquerda da Cabeça
+    [99,99], #Ponta Direita da Cabeça
+    [212, 189], # Ex: olho esquerdo
+    [150, 190], # Ex: olho direito
+    [182, 233], # Ex: ponta do nariz
+    [214, 251], # Ex: canto esquerdo da boca
+    [147, 250], # Ex: canto direito da boca
+    [180, 304], # Ex: queixo
 ])
 
 lista_pontos_final = np.array([
-    [90, 150],  # Ex: olho esquerdo (nova posição)
-    [210, 148], # Ex: olho direito (nova posição)
-    [145, 210], # Ex: ponta do nariz (nova posição)
-    [100, 260], # Ex: canto esquerdo da boca (nova posição)
-    [200, 258], # Ex: canto direito da boca (nova posição)
-    [142, 300], # Ex: queixo (nova posição)
+    [248,75], #Ponta Esquerda da Cabeça
+    [93,82], ##Ponta Direita da Cabeça
+    [211, 139],  # Ex: olho esquerdo (nova posição)
+    [130, 137], # Ex: olho direito (nova posição)
+    [172, 181], # Ex: ponta do nariz (nova posição)
+    [205, 221], # Ex: canto esquerdo da boca (nova posição)
+    [133, 224], # Ex: canto direito da boca (nova posição)
+    [168, 296], # Ex: queixo (nova posição)
 ])
 # --------------------------------------------------------------------------
 
