@@ -1,3 +1,5 @@
+__package__
+
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk, simpledialog
 from PIL import Image, ImageTk

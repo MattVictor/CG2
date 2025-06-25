@@ -1,31 +1,5 @@
 from tkinter import *
-from tkinter import ttk
 from customtkinter import CTk, CTkFrame, CTkLabel, CTkButton, CTkEntry, CTkScrollableFrame, CTkCheckBox, set_default_color_theme, set_appearance_mode
-from Frames.Frame2D import GLUTFrame2D
-from Frames.Frame3D import GLUTFrame3D
-from Frames.ImageFrame import ImageFrame
-from Frames.ecg import ECGFrame
-from Forms.Reta import Reta
-from Forms.Circunferencia import Circunferencia
-from Forms.PoligonoRegular import Quadrado
-from Transform.Transform2D import Transform2D
-from Transform.Transform3D import Transform3D
-
-quadradoBase = [(50,50),
-                (150,50),
-                (150,150),
-                (50,150)]
-
-cuboBase = [
-            [0, 0, 0],
-            [ 100, 0, 0],
-            [ 100,  100, 0],
-            [0,  100, 0],
-            [0, 0,  100],
-            [ 100, 0,  100],
-            [ 100,  100,  100],
-            [0,  100,  100],
-        ]
 
 def LIMPA_CT(array):
     for objeto in array:
@@ -42,11 +16,6 @@ def limpa_frame(frame:Widget):
         widget.pack_forget()
         widget.place_forget()
 
-def insertDataTreeview(tree=ttk.Treeview, data=[]):
-    tree.delete(*tree.get_children())
-    
-    for x, y in data:
-        tree.insert(parent='', index='end', text='', values=(x,y))
 
 def VALIDAR_FLOAT(text):
     if text == '': return True
@@ -58,11 +27,6 @@ def VALIDAR_FLOAT(text):
 
 class Main():
     def __init__(self):
-        self.reta = Reta()
-        self.circunferencia = Circunferencia()
-        self.quadrado = Quadrado()
-        self.transform2D = Transform2D()
-        self.transform3D = Transform3D()
 
         # Tamanho inicial do GL
         self.window_width = 800
