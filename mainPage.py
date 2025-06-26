@@ -4,8 +4,7 @@ from Content.Filtros import Filter
 from Content.Histograma import Equalize
 from Content.MorfismoDP import Morphing
 from Content.Morfologia import Morphology
-from Content.Transformacoes import Transformation
-from Content.Transformacoes2 import Operations
+from Content.Operacoes import Operations
 
 def LIMPA_CT(array):
     for objeto in array:
@@ -78,9 +77,6 @@ class Main():
         self.morfismoButton = CTkButton(self.auxFrame,text="MORFISMO",font=("Segoe UI Black", 35),
                                     command=self.morfPage)
         
-        self.transformButton = CTkButton(self.auxFrame,text="NTGRLIGTF",font=("Segoe UI Black", 35),
-                                    command=self.othersPage)
-        
         self.eq_histogramaButton = CTkButton(self.auxFrame,text="EQUALIZAR\nHISTOGRAMA",font=("Segoe UI Black", 35),
                                     command=self.equalizePage)
         
@@ -114,17 +110,16 @@ class Main():
         self.auxFrame.place(relx=0.015,rely=0.025,relheight=0.95,relwidth=0.3)
         self.mainFrame.place(relx=0.330,rely=0.025,relheight=0.95,relwidth=0.65)
         
-        self.drawButton.pack(anchor=CENTER,pady=7,ipady=10,ipadx=10)
-        self.ECGButton.pack(anchor=CENTER,pady=7,ipady=10,ipadx=10)
-        self.transformButton.pack(anchor=CENTER,pady=7,ipady=10,ipadx=10)
-        self.morfismoButton.pack(anchor=CENTER,pady=7,ipady=10,ipadx=10)
-        self.eq_histogramaButton.pack(anchor=CENTER,pady=7,ipady=10,ipadx=10)
-        self.morfologiaButton.pack(anchor=CENTER,pady=7,ipady=10,ipadx=10)
+        self.drawButton.pack(anchor=CENTER,pady=15,ipady=10,ipadx=10)
+        self.ECGButton.pack(anchor=CENTER,pady=15,ipady=10,ipadx=10)
+        self.morfismoButton.pack(anchor=CENTER,pady=15,ipady=10,ipadx=10)
+        self.eq_histogramaButton.pack(anchor=CENTER,pady=15,ipady=10,ipadx=10)
+        self.morfologiaButton.pack(anchor=CENTER,pady=15,ipady=10,ipadx=10)
     
     def filterPage(self):
         limpa_frame(self.mainFrame)
         
-        Equalize(self.mainFrame).pack(fill="both")
+        Filter(self.mainFrame).place(relx=0,rely=0,relwidth=1,relheight=1)
         
         self.auxFrame.place_forget()
         self.mainFrame.place(relx=0.025,rely=0.025,relwidth=0.95,relheight=0.95)
@@ -132,7 +127,7 @@ class Main():
     def operationPage(self):
         limpa_frame(self.mainFrame)
         
-        Operations(self.mainFrame).pack(fill="both")
+        Operations(self.mainFrame).place(relx=0,rely=0,relwidth=1,relheight=1)
         
         self.auxFrame.place_forget()
         self.mainFrame.place(relx=0.025,rely=0.025,relwidth=0.95,relheight=0.95)
@@ -140,15 +135,7 @@ class Main():
     def morfPage(self):
         limpa_frame(self.mainFrame)
         
-        Morphing(self.mainFrame).pack(fill="both")
-        
-        self.auxFrame.place_forget()
-        self.mainFrame.place(relx=0.025,rely=0.025,relwidth=0.95,relheight=0.95)
-    
-    def othersPage(self):
-        limpa_frame(self.mainFrame)
-        
-        Transformation(self.mainFrame).pack(fill="both")
+        Morphing(self.mainFrame).place(relx=0,rely=0,relwidth=1,relheight=1)
         
         self.auxFrame.place_forget()
         self.mainFrame.place(relx=0.025,rely=0.025,relwidth=0.95,relheight=0.95)
@@ -156,7 +143,7 @@ class Main():
     def equalizePage(self):
         limpa_frame(self.mainFrame)
         
-        Equalize(self.mainFrame).pack(fill="both")
+        Equalize(self.mainFrame).place(relx=0,rely=0,relwidth=1,relheight=1)
         
         self.auxFrame.place_forget()
         self.mainFrame.place(relx=0.025,rely=0.025,relwidth=0.95,relheight=0.95)
@@ -164,7 +151,7 @@ class Main():
     def morphologyPage(self):
         limpa_frame(self.mainFrame)
         
-        Morphology(self.mainFrame).pack(fill="both")
+        Morphology(self.mainFrame).place(relx=0,rely=0,relwidth=1,relheight=1)
         
         self.auxFrame.place_forget()
         self.mainFrame.place(relx=0.025,rely=0.025,relwidth=0.95,relheight=0.95)

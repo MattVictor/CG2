@@ -172,14 +172,14 @@ class Morphology(customtkinter.CTkFrame):
                     output_array[y, x] = func_grayscale(vizinhanca_sob_ee)
         return output_array
 
-    def _dilatacao_manual(self, image_array, ee, is_binary):
+    def _erosao_manual(self, image_array, ee, is_binary):
         """Aplica a dilatação manual, para binário ou nível de cinza."""
         mode = "binario" if is_binary else "cinza"
         func_b = lambda v: 255 if np.any(v == 255) else 0
         func_g = lambda v: np.max(v)
         return self._apply_morphological_op(image_array, ee, mode, func_b, func_g)
 
-    def _erosao_manual(self, image_array, ee, is_binary):
+    def _dilatacao_manual(self, image_array, ee, is_binary):
         """Aplica a erosão manual, para binário ou nível de cinza."""
         mode = "binario" if is_binary else "cinza"
         func_b = lambda v: 255 if np.all(v == 255) else 0
