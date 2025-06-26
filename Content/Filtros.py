@@ -55,7 +55,7 @@ class Filter(ctk.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
 
         # --- Frame de Controles (Esquerda) ---
-        self.controls_frame = ctk.CTkFrame(self, width=350)
+        self.controls_frame = ctk.CTkFrame(self, width=200)
         self.controls_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.controls_frame.grid_propagate(False)
 

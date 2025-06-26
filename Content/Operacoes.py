@@ -21,15 +21,15 @@ class Operations(customtkinter.CTkFrame):
         display_frame.grid_rowconfigure(1, weight=1)
 
         # Controles
-        customtkinter.CTkButton(control_frame, text="Carregar Imagem A", command=lambda: self.ops_carregar_imagem('a')).pack(side="left", padx=10, pady=10)
-        customtkinter.CTkButton(control_frame, text="Carregar Imagem B", command=lambda: self.ops_carregar_imagem('b')).pack(side="left", padx=10, pady=10)
+        customtkinter.CTkButton(control_frame, text="Carregar Imagem A", command=lambda: self.ops_carregar_imagem('a')).pack(side="left", padx=100, pady=10)
+        customtkinter.CTkButton(control_frame, text="Carregar Imagem B", command=lambda: self.ops_carregar_imagem('b')).pack(side="left", padx=100, pady=10)
 
         self.operations = {"Soma": "+", "Subtração": "-", "Multiplicação": "*", "Divisão": "/", "AND": "&", "OR": "|", "XOR": "^"}
         self.ops_op_var = customtkinter.StringVar(value="Soma")
         op_menu = customtkinter.CTkComboBox(control_frame, variable=self.ops_op_var, values=list(self.operations.keys()), state="readonly", width=150)
-        op_menu.pack(side="left", padx=10, pady=10)
+        op_menu.pack(side="left", padx=100, pady=10)
 
-        customtkinter.CTkButton(control_frame, text="Calcular", command=self.ops_aplicar).pack(side="left", padx=10, pady=10)
+        customtkinter.CTkButton(control_frame, text="Calcular", command=self.ops_aplicar).pack(side="left", padx=100, pady=10)
 
         # Displays de Imagem (usando grid para melhor redimensionamento)
         customtkinter.CTkLabel(display_frame, text="Imagem A").grid(row=0, column=0)

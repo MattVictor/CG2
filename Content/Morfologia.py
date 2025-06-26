@@ -30,11 +30,11 @@ class Morphology(customtkinter.CTkFrame):
         display_frame.grid_rowconfigure(0, weight=1)
 
         # --- Widgets de Controle ---
-        customtkinter.CTkButton(control_frame, text="Carregar Imagem", command=self.morf_carregar_imagem).pack(side="left", padx=10, pady=10)
+        customtkinter.CTkButton(control_frame, text="Carregar Imagem", command=self.morf_carregar_imagem).pack(side="left", padx=60, pady=10)
 
         # Seletor de Modo (Binário / Nível de Cinza)
         self.morf_mode_var = customtkinter.StringVar(value="cinza")
-        customtkinter.CTkLabel(control_frame, text="Modo:").pack(side="left", padx=(20, 5), pady=10)
+        customtkinter.CTkLabel(control_frame, text="Modo:").pack(side="left", padx=(50, 5), pady=10)
         customtkinter.CTkRadioButton(control_frame, text="Nível de Cinza", variable=self.morf_mode_var, value="cinza", command=self.morf_processar_e_exibir_original).pack(side="left", pady=10)
         customtkinter.CTkRadioButton(control_frame, text="Binário", variable=self.morf_mode_var, value="binario", command=self.morf_processar_e_exibir_original).pack(side="left", padx=5, pady=10)
 
@@ -43,15 +43,15 @@ class Morphology(customtkinter.CTkFrame):
                       "Borda Externa", "Top-Hat", "Bottom-Hat"]
         self.morf_op_var = customtkinter.StringVar(value="Dilatação")
         op_menu = customtkinter.CTkComboBox(control_frame, variable=self.morf_op_var, values=operations, state="readonly", width=200)
-        op_menu.pack(side="left", padx=10, pady=10)
+        op_menu.pack(side="left", padx=50, pady=10)
 
         # Seletor de Elemento Estruturante
-        elementos_estruturantes = ["Quadrado 3x3", "Cruz 3x3", "Disco 5x5"]
+        elementos_estruturantes = ["Quadrado 3x3", "Cruz 3x3", "X 3x3"]
         self.morf_ee_var = customtkinter.StringVar(value="Quadrado 3x3")
         ee_menu = customtkinter.CTkComboBox(control_frame, variable=self.morf_ee_var, values=elementos_estruturantes, state="readonly", width=150)
-        ee_menu.pack(side="left", padx=5, pady=10)
+        ee_menu.pack(side="left", padx=50, pady=10)
 
-        customtkinter.CTkButton(control_frame, text="Aplicar", command=self.morf_aplicar_operacao).pack(side="left", padx=10, pady=10)
+        customtkinter.CTkButton(control_frame, text="Aplicar", command=self.morf_aplicar_operacao).pack(side="left", padx=50, pady=10)
 
         # Displays de Imagem
         self.morf_label_orig = customtkinter.CTkLabel(display_frame, text="Imagem Original", fg_color=("gray85", "gray17"))
@@ -160,8 +160,8 @@ class Morphology(customtkinter.CTkFrame):
             return np.ones((3, 3), dtype=np.uint8)
         elif nome_ee == "Cruz 3x3":
             return np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]], dtype=np.uint8)
-        elif nome_ee == "Disco 5x5":
-            return np.array([[0, 0, 1, 0, 0], [0, 1, 1, 1, 0], [1, 1, 1, 1, 1], [0, 1, 1, 1, 0], [0, 0, 1, 0, 0]], dtype=np.uint8)
+        elif nome_ee == "X 3x3":
+            return np.array([[1, 0, 1], [0, 1, 0], [1, 0, 1]], dtype=np.uint8)
         return np.ones((3, 3), dtype=np.uint8)
 
     # --- FUNÇÕES DE MORFOLOGIA MANUAL (GENERALIZADAS) ---

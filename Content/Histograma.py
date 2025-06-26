@@ -38,9 +38,9 @@ class Equalize(ctk.CTkFrame):
 
         # --- Controles ---
         self.btn_open = ctk.CTkButton(control_frame, text="Selecionar Imagem", command=self.select_image, height=35)
-        self.btn_open.pack(side="left", padx=10)
+        self.btn_open.pack(side="left", padx=250)
         self.btn_apply = ctk.CTkButton(control_frame, text="Equalizar Histograma", command=self.apply_equalization, height=35, state="disabled")
-        self.btn_apply.pack(side="left", padx=10)
+        self.btn_apply.pack(side="right", padx=250)
 
         # --- Áreas de Exibição 2x2 ---
         orig_img_frame = ctk.CTkFrame(display_frame)
