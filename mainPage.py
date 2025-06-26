@@ -39,7 +39,7 @@ class Main():
         self.tkwindow_height = self.root.winfo_screenheight()
         
         self.root.geometry(f"{self.tkwindow_width}x{self.tkwindow_height}")
-        self.root.title("Computação Gráfica")
+        self.root.title("Processamento de Images")
         self.root.after(0, lambda: self.root.wm_state('zoomed'))
         
         set_default_color_theme("./Temas/theme.json")
