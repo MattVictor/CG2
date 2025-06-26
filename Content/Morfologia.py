@@ -39,7 +39,8 @@ class Morphology(customtkinter.CTkFrame):
         customtkinter.CTkRadioButton(control_frame, text="Binário", variable=self.morf_mode_var, value="binario", command=self.morf_processar_e_exibir_original).pack(side="left", padx=5, pady=10)
 
         # Seletor de Operador Morfológico
-        operations = ["Dilatação", "Erosão", "Abertura", "Fechamento", "Gradiente Morfológico", "Extração de Fronteira"]
+        operations = ["Dilatação", "Erosão", "Abertura", "Fechamento", "Gradiente Morfológico", "Extração de Fronteira", "Borda Interna",
+                      "Borda Externa", "Top-Hat", "Bottom-Hat"]
         self.morf_op_var = customtkinter.StringVar(value="Dilatação")
         op_menu = customtkinter.CTkComboBox(control_frame, variable=self.morf_op_var, values=operations, state="readonly", width=200)
         op_menu.pack(side="left", padx=10, pady=10)
@@ -79,45 +80,59 @@ class Morphology(customtkinter.CTkFrame):
         self.morf_label_proc.configure(image=None, text="Imagem Processada")
 
     def morf_aplicar_operacao(self):
-        """Verifica os inputs e chama a função de processamento morfológico."""
-        if self.morf_img_array is None:
-            messagebox.showerror("Erro", "Carregue uma imagem primeiro.")
-            return
-
-        self.winfo_toplevel().config(cursor="watch")
-        self.update_idletasks()
-
-        self.morf_processar_e_exibir_original()
+        if self.morf_img_array is None: messagebox.showerror("Erro",
+                                                             "Carregue uma imagem na aba 'Morfologia'."); return
 
         op = self.morf_op_var.get()
         ee = self._get_elemento_estruturante(self.morf_ee_var.get())
         is_binary = (self.morf_mode_var.get() == "binario")
-
         resultado_array = None
         try:
-            if op == "Dilatação":
-                resultado_array = self._dilatacao_manual(self.morf_img_array, ee, is_binary)
-            elif op == "Erosão":
-                resultado_array = self._erosao_manual(self.morf_img_array, ee, is_binary)
+            if op == "Erosão":
+                resultado_array = self._dilatacao(self.morf_img_array, ee, is_binary)
+           
+            elif op == "Dilatação":
+                resultado_array = self._erosao(self.morf_img_array, ee, is_binary)
+            
             elif op == "Abertura":
-                erodido = self._erosao_manual(self.morf_img_array, ee, is_binary)
-                resultado_array = self._dilatacao_manual(erodido, ee, is_binary)
+                erodido = self._erosao(self.morf_img_array, ee, is_binary)
+                resultado_array = self._dilatacao(erodido, ee, is_binary)
+            
             elif op == "Fechamento":
-                dilatado = self._dilatacao_manual(self.morf_img_array, ee, is_binary)
-                resultado_array = self._erosao_manual(dilatado, ee, is_binary)
+                dilatado = self._dilatacao(self.morf_img_array, ee, is_binary)
+                resultado_array = self._erosao(dilatado, ee, is_binary)
+            
             elif op == "Gradiente Morfológico":
-                dilatado = self._dilatacao_manual(self.morf_img_array, ee, is_binary).astype(np.float32)
-                erodido = self._erosao_manual(self.morf_img_array, ee, is_binary).astype(np.float32)
-                resultado_array = dilatado - erodido
-            elif op == "Extração de Fronteira":
-                erodido = self._erosao_manual(self.morf_img_array, ee, is_binary).astype(np.float32)
+                dilatado = self._dilatacao(self.morf_img_array, ee, is_binary).astype(np.float32)
+                erodido = self._erosao(self.morf_img_array, ee, is_binary).astype(np.float32)
+                resultado_array = np.subtract(dilatado,erodido)
+
+            elif op == "Borda Interna":
+                # Fórmula: Original - Erosão
+                erodido = self._erosao(self.morf_img_array, ee, is_binary).astype(np.float32)
                 resultado_array = self.morf_img_array.astype(np.float32) - erodido
+
+            elif op == "Borda Externa":
+                dilatado = self._dilatacao(self.morf_img_array, ee, is_binary).astype(np.float32)
+                resultado_array = dilatado - self.morf_img_array.astype(np.float32)
+
+            elif op == "Top-Hat":
+                # Fórmula: Original - Abertura
+                erodido = self._erosao(self.morf_img_array, ee, is_binary)
+                abertura = self._dilatacao(erodido, ee, is_binary).astype(np.float32)
+                resultado_array = self.morf_img_array.astype(np.float32) - abertura
+
+            elif op == "Bottom-Hat":
+                # Fórmula: Fechamento - Original
+                dilatado = self._dilatacao(self.morf_img_array, ee, is_binary)
+                fechamento = self._erosao(dilatado, ee, is_binary).astype(np.float32)
+                resultado_array = fechamento - self.morf_img_array.astype(np.float32)
 
             if resultado_array is not None:
                 resultado_final = np.clip(resultado_array, 0, 255).astype(np.uint8)
                 self._exibir_imagem(Image.fromarray(resultado_final), self.morf_label_proc)
-        finally:
-            self.winfo_toplevel().config(cursor="")
+        except:
+            messagebox.showerror("ERRO", "Ocorreu um erro durante a operação")
 
     def _exibir_imagem(self, pil_image, label_widget):
         """Redimensiona e exibe uma imagem da PIL em um CTkLabel."""
@@ -172,16 +187,20 @@ class Morphology(customtkinter.CTkFrame):
                     output_array[y, x] = func_grayscale(vizinhanca_sob_ee)
         return output_array
 
-    def _erosao_manual(self, image_array, ee, is_binary):
-        """Aplica a dilatação manual, para binário ou nível de cinza."""
+    def _dilatacao(self, image_array, ee, is_binary):
+        """Aplica a DILATAÇÃO manual, para binário ou nível de cinza."""
         mode = "binario" if is_binary else "cinza"
+        # DILATAÇÃO: Pega o valor MÁXIMO na vizinhança.
+        # No modo binário, se QUALQUER pixel for 255, o resultado é 255.
         func_b = lambda v: 255 if np.any(v == 255) else 0
         func_g = lambda v: np.max(v)
         return self._apply_morphological_op(image_array, ee, mode, func_b, func_g)
 
-    def _dilatacao_manual(self, image_array, ee, is_binary):
-        """Aplica a erosão manual, para binário ou nível de cinza."""
+    def _erosao(self, image_array, ee, is_binary):
+        """Aplica a EROSÃO manual, para binário ou nível de cinza."""
         mode = "binario" if is_binary else "cinza"
+        # EROSÃO: Pega o valor MÍNIMO na vizinhança.
+        # No modo binário, se TODOS os pixels forem 255, o resultado é 255.
         func_b = lambda v: 255 if np.all(v == 255) else 0
         func_g = lambda v: np.min(v)
         return self._apply_morphological_op(image_array, ee, mode, func_b, func_g)

@@ -1,4 +1,3 @@
-import tkinter
 from tkinter import filedialog
 import customtkinter as ctk
 from PIL import Image, ImageTk # Removido ImageTk, pois usaremos CTkImage

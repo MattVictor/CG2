@@ -7,7 +7,7 @@ from PIL import Image, ImageTk
 import threading
 
 # --------------------------------------------------------------------------
-# ALGORITMO DE MORPHING (BEIER-NEELY) - SEM MODIFICAÇÕES NA LÓGICA
+# ALGORITMO DE MORPHING (BEIER-NEELY)
 # --------------------------------------------------------------------------
 
 class Linha:
