@@ -24,8 +24,8 @@ KERNELS = {
         "Gy": np.array([[-1, -1, -1], [0, 0, 0], [1, 1, 1]])
     },
     "Bordas (Roberts)": {
-         "Gx": np.array([[1, 0], [0, -1]]),
-         "Gy": np.array([[0, 1], [-1, 0]])
+         "Gx": np.array([[1, 0], [-1, 0]]),
+         "Gy": np.array([[1, 1], [0, 0]])
     },
     "Bordas (Roberts Cruzado)": {
         "Gx": np.array([[1, 0], [0, -1]]),
@@ -84,7 +84,7 @@ class Filter(ctk.CTkFrame):
         filter_options = [
             "Negativo", "Gamma", "Logarítmica", "Sigmoide", "Ajuste de Faixa Dinâmica", "Linear",
             "Filtro da Média", "Filtro da Mediana", "Passa-Altas Básico",
-            "Bordas (Sobel)", "Bordas (Prewitt)", "Bordas (Roberts)", "Bordas (Roberts Cruzado)", "Realce (High-Boost)"
+            "Bordas (Sobel)", "Bordas (Prewitt)", "Bordas (Roberts) em X", "Bordas (Roberts) em Y", "Bordas (Roberts)", "Bordas (Roberts Cruzado)", "Realce (High-Boost)"
         ]
         self.filter_menu = ctk.CTkOptionMenu(self.controls_frame, values=filter_options, command=self.on_filter_change)
         self.filter_menu.grid(row=2, column=0, padx=0, pady=0, sticky="ew", columnspan=2)
@@ -226,11 +226,23 @@ class Filter(ctk.CTkFrame):
             gx_img = self._manual_convolve(source_image, kernels["Gx"])
             gy_img = self._manual_convolve(source_image, kernels["Gy"])
             self.transformed_np_image = np.abs(gx_img) + np.abs(gy_img)
-        elif filter_name in ["Bordas (Roberts)", "Bordas (Roberts Cruzado)"]:
+        elif filter_name in ["Bordas (Roberts) em X"]:
+            kernels = KERNELS["Bordas (Roberts)"]
+            self.transformed_np_image = self._manual_convolve(source_image, kernels["Gx"])
+        elif filter_name in ["Bordas (Roberts) em Y"]:
+            kernels = KERNELS["Bordas (Roberts)"]
+            self.transformed_np_image = self._manual_convolve(source_image, kernels["Gy"])
+        elif filter_name in ["Bordas (Roberts)"]:
             kernels = KERNELS["Bordas (Roberts)"]
             gx_img = self._manual_convolve(source_image, kernels["Gx"])
             gy_img = self._manual_convolve(source_image, kernels["Gy"])
             self.transformed_np_image = np.abs(gx_img) + np.abs(gy_img)
+        elif filter_name in ["Bordas (Roberts Cruzado)"]:
+            kernels = KERNELS["Bordas (Roberts Cruzado)"]
+            gx_img = self._manual_convolve(source_image, kernels["Gx"])
+            gy_img = self._manual_convolve(source_image, kernels["Gy"])
+            self.transformed_np_image = np.abs(gx_img) + np.abs(gy_img)    
+        
         elif filter_name == "Realce (High-Boost)":
             k = self.highboost_k_slider.get()
             kernel = KERNELS[filter_name](k)
