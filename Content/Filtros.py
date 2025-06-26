@@ -205,3 +205,5 @@ class Filter:
             messagebox.showinfo("Sucesso", f"Imagem salva com sucesso em:\n{filepath}")
         except Exception as e:
             messagebox.showerror("Erro ao Salvar", f"Ocorreu um erro: {e}")
+            
+Filter(tk())

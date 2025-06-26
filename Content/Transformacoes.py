@@ -1,228 +1,251 @@
-__package__ = None
+__package__ = None # Garante a execução como script
 
 import customtkinter
 from tkinter import filedialog, messagebox
-from PIL import Image
+from PIL import Image, ImageTk
 import numpy as np
 
-# --- Classe Principal como um CTkFrame ---
-class Transformation(customtkinter.CTkFrame):
+class FiltrosFrame(customtkinter.CTkFrame):
+    """Um frame que encapsula todas as funcionalidades de filtros de imagem."""
+    
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
 
-        self.original_pil_image = None
-        self.processed_pil_image = None
+        # --- Variáveis de Instância ---
+        self.img_original_pil = None
+        self.img_processada_pil = None
+        self.img_original_tk = None
+        self.img_processada_tk = None
 
-        # --- Configuração do Grid do Frame Principal ---
-        self.grid_columnconfigure((0, 1), weight=1)
-        self.grid_rowconfigure(1, weight=1)
-        self.grid_rowconfigure(2, weight=0)
+        # --- Configuração do Grid Principal ---
+        self.grid_rowconfigure(2, weight=1) # Linha de display (2) expande
+        self.grid_columnconfigure(0, weight=1)
 
-        # --- Widgets da Interface ---
-        
-        # Frame de Controles
+        # --- Frame de Controles (Linha 0) ---
         control_frame = customtkinter.CTkFrame(self)
-        control_frame.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        control_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
-        self.btn_open = customtkinter.CTkButton(control_frame, text="Selecionar Imagem", command=self.select_image)
-        self.btn_open.grid(row=0, column=0, padx=10, pady=10)
-        
-        self.lbl_path = customtkinter.CTkLabel(control_frame, text="Nenhuma imagem selecionada", anchor="w")
-        self.lbl_path.grid(row=0, column=1, columnspan=3, padx=10, pady=10, sticky="ew")
+        btn_carregar = customtkinter.CTkButton(control_frame, text="Carregar Imagem", command=self._carregar_imagem)
+        btn_carregar.pack(side="left", padx=10, pady=10)
 
-        # Dicionário e Menu de Operações
-        self.operations = {
-            "Negativo da Imagem": "negativo_manual", "Transformação Gamma": "gamma_manual",
-            "Transformação Logarítmica": "log_manual", "Transformação Sigmoide": "sigmoide_manual",
-            "Ajuste de Faixa Dinâmica": "faixa_dinamica_manual",
-            "Transformação Linear (Brilho/Contraste)": "linear_manual",
+        operations = {
+            "Negativo": "negativo", "Gamma": "gamma", "Logarítmica": "log", "Sigmoide": "sigmoide",
+            "Ajuste de Faixa Dinâmica": "faixa_dinamica", "Linear": "linear", "Filtro da Média": "media",
+            "Filtro da Mediana": "mediana", "Passa-Altas Básico": "laplaciano",
+            "Bordas (Sobel)": "sobel", "Bordas (Prewitt)": "prewitt",
+            "Bordas (Roberts)": "roberts", "Bordas (Roberts Cruzado)": "roberts_cruzado",
+            "Realce (High-Boost)": "high_boost"
         }
-        self.operation_menu = customtkinter.CTkComboBox(control_frame, values=list(self.operations.keys()), state="readonly")
-        self.operation_menu.set("Negativo da Imagem")
-        self.operation_menu.grid(row=1, column=0, padx=10, pady=10)
-
-        self.btn_apply = customtkinter.CTkButton(control_frame, text="Aplicar Operação", command=self.apply_operation)
-        self.btn_apply.grid(row=1, column=1, padx=10, pady=10, sticky="w")
-
-        self.btn_save = customtkinter.CTkButton(control_frame, text="Salvar Imagem", command=self.save_image, state="disabled")
-        self.btn_save.grid(row=1, column=2, padx=10, pady=10, sticky="w")
-
-        ### ALTERADO: Criação de frames roláveis para as imagens ###
-        scroll_frame_orig = customtkinter.CTkScrollableFrame(self, label_text="Imagem Original")
-        scroll_frame_orig.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
-
-        scroll_frame_proc = customtkinter.CTkScrollableFrame(self, label_text="Imagem Processada")
-        scroll_frame_proc.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
-
-        # As labels agora são colocadas dentro dos frames roláveis
-        self.original_label = customtkinter.CTkLabel(scroll_frame_orig, text="")
-        self.original_label.pack()
         
-        self.processed_label = customtkinter.CTkLabel(scroll_frame_proc, text="")
-        self.processed_label.pack()
+        self.op_menu = customtkinter.CTkComboBox(control_frame, values=list(operations.keys()), state="readonly", width=200)
+        self.op_menu.set("Negativo")
+        self.op_menu.pack(side="left", padx=10, pady=10)
 
-        # Inspetores de Pixels (sem alteração na criação)
-        inspector_frame_orig = self._create_inspector_frame("Original")
-        inspector_frame_orig.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
-        self.inspector_labels_orig = self._create_inspector_grid(inspector_frame_orig)
+        btn_aplicar = customtkinter.CTkButton(control_frame, text="Aplicar", command=lambda: self._aplicar_operacao(operations[self.op_menu.get()]))
+        btn_aplicar.pack(side="left", padx=10, pady=10)
 
-        inspector_frame_proc = self._create_inspector_frame("Processado")
-        inspector_frame_proc.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
-        self.inspector_labels_proc = self._create_inspector_grid(inspector_frame_proc)
-
-    # --- Funções do Inspetor ---
-    def _create_inspector_frame(self, title):
-        frame = customtkinter.CTkFrame(self)
-        label = customtkinter.CTkLabel(frame, text=f"Inspetor 9x9 ({title})", font=customtkinter.CTkFont(weight="bold"))
-        label.pack(pady=(5,5))
-        return frame
-
-    def _create_inspector_grid(self, parent_frame):
-        grid_frame = customtkinter.CTkFrame(parent_frame, fg_color="transparent")
-        grid_frame.pack(pady=(0, 5))
+        # --- Frame do Inspetor (Linha 1) ---
+        inspector_frame = customtkinter.CTkFrame(self)
+        inspector_frame.grid(row=1, column=0, padx=10, pady=5, sticky="w")
         
-        labels_list = []
-        for r in range(9):
-            row_list = []
-            for c in range(9):
-                label = customtkinter.CTkLabel(grid_frame, text="-", width=30, height=30, font=("Consolas", 11))
-                if r == 4 and c == 4:
-                    label.configure(fg_color="#8B0000", font=("Consolas", 11, "bold"))
-                label.grid(row=r, column=c, padx=1, pady=1)
-                row_list.append(label)
-            labels_list.append(row_list)
-        return labels_list
-
-    ### ALTERADO: Lógica de atualização do inspetor simplificada ###
-    def _update_inspectors(self, event):
-        """Atualiza AMBAS as matrizes com base na posição do mouse."""
-        # A coordenada do mouse agora é a coordenada do pixel, sem necessidade de tradução
-        center_x, center_y = event.x, event.y
-
-        # Preenche a matriz da imagem original
-        if self.original_pil_image:
-            self._fill_grid(self.inspector_labels_orig, self.original_pil_image, center_x, center_y)
+        customtkinter.CTkLabel(inspector_frame, text="Vizinhança do Pixel (3x3):").pack(side="left", padx=(10,0))
+        grid_frame = customtkinter.CTkFrame(inspector_frame, fg_color="transparent")
+        grid_frame.pack(side="left", padx=10)
         
-        # Preenche a matriz da imagem processada USANDO AS MESMAS COORDENADAS
-        if self.processed_pil_image:
-            self._fill_grid(self.inspector_labels_proc, self.processed_pil_image, center_x, center_y)
+        self.pixel_grid_labels = []
+        for i in range(3):
+            row_labels = []
+            for j in range(3):
+                lbl = customtkinter.CTkLabel(grid_frame, text="---", width=35, height=35, font=("Consolas", 10))
+                lbl.grid(row=i, column=j, padx=1, pady=1)
+                row_labels.append(lbl)
+            self.pixel_grid_labels.append(row_labels)
 
-    def _fill_grid(self, labels, pil_image, center_x, center_y):
-        img_array = np.array(pil_image.convert("L"))
-        img_h, img_w = img_array.shape
+        # --- Frame de Display das Imagens (Linha 2) ---
+        display_frame = customtkinter.CTkFrame(self, fg_color="transparent")
+        display_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+        display_frame.grid_columnconfigure((0, 1), weight=1)
+        display_frame.grid_rowconfigure(0, weight=1)
 
-        for r in range(9):
-            for c in range(9):
-                sample_y, sample_x = center_y - 4 + r, center_x - 4 + c
-                if 0 <= sample_y < img_h and 0 <= sample_x < img_w:
-                    pixel_value = img_array[sample_y, sample_x]
-                    labels[r][c].configure(text=str(pixel_value))
-                else:
-                    labels[r][c].configure(text="-")
+        self.label_orig = customtkinter.CTkLabel(display_frame, text="Imagem Original", fg_color=("gray85", "gray17"))
+        self.label_orig.grid(row=0, column=0, sticky="nsew", padx=5)
+        
+        self.label_proc = customtkinter.CTkLabel(display_frame, text="Imagem Processada", fg_color=("gray85", "gray17"))
+        self.label_proc.grid(row=0, column=1, sticky="nsew", padx=5)
 
-    def _clear_inspectors(self, event=None):
-        for r in range(9):
-            for c in range(9):
-                self.inspector_labels_orig[r][c].configure(text="-")
-                self.inspector_labels_proc[r][c].configure(text="-")
-    
-    # --- Funções de Processamento (Inalteradas) ---
-    def transformacao_negativo_manual(self, image_array): return 255 - image_array
-    def transformacao_gamma_manual(self, image_array, gamma): return np.power(image_array / 255.0, gamma) * 255
-    def transformacao_log_manual(self, image_array): return (255 / np.log(1 + np.max(image_array))) * np.log(1 + image_array)
-    def transformacao_sigmoide_manual(self, image_array, w, s): return 255*(1/(1+np.exp(-(image_array-w)/(s if s!=0 else 1e-6))))
-    def transformacao_faixa_dinamica_manual(self, image_array): f_min,f_max=np.min(image_array),np.max(image_array); return ((image_array-f_min)/(f_max-f_min if f_max!=f_min else 1))*255
-    def transformacao_linear_manual(self, image_array, a, b): return a * image_array + b
+        # Vincula eventos do mouse
+        self.label_orig.bind("<Motion>", lambda e: self._mostrar_info_pixel(e, 'original'))
+        self.label_proc.bind("<Motion>", lambda e: self._mostrar_info_pixel(e, 'processada'))
+        self.label_orig.bind("<Leave>", self._limpar_info_pixel)
+        self.label_proc.bind("<Leave>", self._limpar_info_pixel)
 
-    # --- Lógica Principal da Aplicação ---
-    def get_input_dialog(self, title, text, input_type=float):
+    # --- Métodos da Lógica Principal ---
+
+    def _carregar_imagem(self):
+        path = filedialog.askopenfilename(filetypes=[("Imagens", "*.pgm *.jpg *.png"), ("Todos os arquivos", "*.*")])
+        if not path: return
+        
+        self.img_original_pil = Image.open(path).convert("L")
+        self.img_processada_pil = None
+        
+        self.img_original_tk = self._exibir_imagem(self.img_original_pil, self.label_orig)
+        
+        self.label_proc.configure(image=None, text="Imagem Processada")
+        self.label_proc.image = None
+        self._limpar_info_pixel()
+
+    def _get_input_dialog(self, title, text, initial_value, type_cast=float):
+        """Auxiliar para caixas de diálogo de input."""
         dialog = customtkinter.CTkInputDialog(title=title, text=text)
+        # CTkInputDialog não suporta valor inicial, então pegamos o input
         input_str = dialog.get_input()
         if input_str is None: return None
-        try: return input_type(input_str)
-        except (ValueError, TypeError): messagebox.showerror("Erro de Entrada", f"Valor inválido."); return None
-
-    def apply_operation(self):
-        if not self.original_pil_image: messagebox.showerror("Erro", "Selecione uma imagem."); return
-        operation_key, operation_value = self.operation_menu.get(), self.operations[self.operation_menu.get()]
-        self.winfo_toplevel().config(cursor="watch"); self.update_idletasks()
-        img_array = np.array(self.original_pil_image.convert("L"), dtype=np.float32)
-        processed_array = None
-        
-        if operation_value=='negativo_manual' or operation_value=='log_manual' or operation_value=='faixa_dinamica_manual':
-            processed_array = getattr(self, operation_value)(img_array)
-        elif operation_value == 'gamma_manual':
-            gamma = self.get_input_dialog("Gamma", "Gamma (ex: 0.5):", float)
-            if gamma is not None: processed_array = self.transformacao_gamma_manual(img_array, gamma)
-        elif operation_value == 'sigmoide_manual':
-            w = self.get_input_dialog("Centro Sigmoide", "Centro (w, ex: 128):", float)
-            if w is not None:
-                s = self.get_input_dialog("Largura Sigmoide", "Largura (σ, ex: 25):", float)
-                if s is not None: processed_array = self.transformacao_sigmoide_manual(img_array, w, s)
-        elif operation_value == 'linear_manual':
-            a = self.get_input_dialog("Contraste", "Contraste (a, ex: 1.5):", float)
-            if a is not None:
-                b = self.get_input_dialog("Brilho", "Brilho (b, ex: -20):", int)
-                if b is not None: processed_array = self.transformacao_linear_manual(img_array, a, b)
-
-        if processed_array is not None:
-            processed_array = np.clip(processed_array, 0, 255)
-            self.processed_pil_image = Image.fromarray(processed_array.astype(np.uint8))
-            self.display_image(self.processed_pil_image, self.processed_label)
-            self.btn_save.configure(state="normal")
-        self.winfo_toplevel().config(cursor="")
-
-    def select_image(self):
-        path = filedialog.askopenfilename(filetypes=[("Imagens", "*.jpg *.jpeg *.png *.bmp *.gif *.pgm")])
-        if not path: return
         try:
-            self.original_pil_image = Image.open(path)
-        except Exception as e:
-            messagebox.showerror("Erro ao Abrir", f"Não foi possível carregar a imagem: {e}")
+            return type_cast(input_str)
+        except (ValueError, TypeError):
+            messagebox.showerror("Entrada Inválida", f"Por favor, insira um número válido.")
+            return None
+
+    def _aplicar_operacao(self, op_value):
+        if not self.img_original_pil:
+            messagebox.showerror("Erro", "Carregue uma imagem primeiro.")
             return
             
-        self.lbl_path.configure(text=path)
-        self.display_image(self.original_pil_image, self.original_label)
-        self.processed_label.configure(image=None)
-        self._clear_inspectors()
-        self.processed_pil_image = None
-        self.btn_save.configure(state="disabled")
-
-    ### ALTERADO: Função de exibição de imagem sem redimensionamento ###
-    def display_image(self, pil_image, label_widget):
-        # A imagem não é mais redimensionada
-        tk_image = customtkinter.CTkImage(
-            light_image=pil_image, 
-            dark_image=pil_image, 
-            size=pil_image.size
-        )
+        self.winfo_toplevel().configure(cursor="watch")
+        self.update_idletasks()
         
-        label_widget.configure(image=tk_image, text="")
-        label_widget.image = tk_image # Mantém a referência
+        img_array = np.array(self.img_original_pil, dtype=np.float32)
+        proc_array = None
         
-        # Vincula os eventos para o inspetor
-        label_widget.bind("<Motion>", self._update_inspectors)
-        label_widget.bind("<Leave>", self._clear_inspectors)
+        try:
+            if op_value == 'negativo': proc_array = 255 - img_array
+            elif op_value == 'gamma':
+                gamma = self._get_input_dialog("Input", "Gamma (ex: 0.5):", 0.5, float)
+                if gamma is not None: proc_array = ((img_array / 255.0) ** gamma) * 255.0
+            elif op_value == 'log':
+                c = 255 / np.log(1 + np.max(img_array))
+                proc_array = c * np.log(1 + img_array)
+            elif op_value == 'sigmoide':
+                w = self._get_input_dialog("Input", "Centro (w, ex: 128):", 128, float)
+                sigma = self._get_input_dialog("Input", "Largura (σ, ex: 25):", 25, float)
+                if w is not None and sigma is not None and sigma != 0: proc_array = 255 * (1 / (1 + np.exp(-(img_array - w) / sigma)))
+            elif op_value == 'faixa_dinamica':
+                f_min, f_max = np.min(img_array), np.max(img_array)
+                proc_array = img_array if f_max == f_min else ((img_array - f_min) / (f_max - f_min)) * 255
+            elif op_value == 'linear':
+                a = self._get_input_dialog("Input", "Contraste (a, ex: 1.5):", 1.5, float)
+                b = self._get_input_dialog("Input", "Brilho (b, ex: -20):", 0, int)
+                if a is not None and b is not None: proc_array = a * img_array + b
+            elif op_value == 'media': proc_array = self._convolve_manual(img_array, np.ones((3, 3)) / 9.0)
+            elif op_value == 'mediana': proc_array = self._mediana_manual(img_array)
+            elif op_value == 'laplaciano': proc_array = self._convolve_manual(img_array, np.array([[-1,-1,-1],[-1,9,-1],[-1,-1,-1]]))
+            elif op_value == 'sobel':
+                gy = self._convolve_manual(img_array, np.array([[-1,-2,-1],[0,0,0],[1,2,1]]))
+                gx = self._convolve_manual(img_array, np.array([[-1,0,1],[-2,0,2],[-1,0,1]]))
+                proc_array = np.sqrt(gx**2 + gy**2)
+            elif op_value == 'prewitt':
+                gy = self._convolve_manual(img_array, np.array([[-1,-1,-1],[0,0,0],[1,1,1]]))
+                gx = self._convolve_manual(img_array, np.array([[-1,0,1],[-1,0,1],[-1,0,1]]))
+                proc_array = np.abs(gx) + np.abs(gy)
+            elif op_value == 'roberts':
+                gy = self._convolve_manual(img_array, np.array([[0,0,0],[0,1,0],[0,-1,0]]))
+                gx = self._convolve_manual(img_array, np.array([[0,0,0],[0,1,-1],[0,0,0]]))
+                proc_array = np.abs(gx) + np.abs(gy)
+            elif op_value == 'roberts_cruzado':
+                g_d1 = self._convolve_manual(img_array, np.array([[0,0,0],[0,1,0],[0,0,-1]]))
+                g_d2 = self._convolve_manual(img_array, np.array([[0,0,0],[0,0,1],[0,-1,0]]))
+                proc_array = np.abs(g_d1) + np.abs(g_d2)
+            elif op_value == 'high_boost':
+                fator_a = self._get_input_dialog("Input", "Fator de Realce A (A > 1):", 1.1, float)
+                if fator_a is not None and fator_a > 1.0:
+                    passa_baixa = self._convolve_manual(img_array, np.ones((3, 3)) / 9.0)
+                    g_mascara = img_array - passa_baixa
+                    proc_array = img_array + fator_a * g_mascara
 
-    def save_image(self):
-        if not self.processed_pil_image: messagebox.showerror("Erro", "Não há imagem para salvar."); return
-        filepath = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG","*.png"),("JPEG","*.jpg")])
-        if not filepath: return
-        try: 
-            # Garante que a imagem processada seja salva no modo correto
-            save_img = self.processed_pil_image.convert("RGB") if self.processed_pil_image.mode == 'RGBA' else self.processed_pil_image
-            save_img.save(filepath)
-            messagebox.showinfo("Sucesso", f"Imagem salva em:\n{filepath}")
-        except Exception as e: 
-            messagebox.showerror("Erro ao Salvar", f"Ocorreu um erro: {e}")
+            if proc_array is not None:
+                proc_array = np.clip(proc_array, 0, 255)
+                self.img_processada_pil = Image.fromarray(proc_array.astype(np.uint8))
+                self.img_processada_tk = self._exibir_imagem(self.img_processada_pil, self.label_proc)
+        finally:
+            self.winfo_toplevel().configure(cursor="")
+
+    def _mostrar_info_pixel(self, event, tipo_imagem):
+        imagem_pil, imagem_tk = (self.img_original_pil, self.img_original_tk) if tipo_imagem == 'original' else (self.img_processada_pil, self.img_processada_tk)
+        if not all((imagem_pil, imagem_tk)): return
+
+        widget_w, widget_h = event.widget.winfo_width(), event.widget.winfo_height()
+        img_w, img_h = imagem_tk.size
+
+        offset_x, offset_y = (widget_w - img_w) / 2, (widget_h - img_h) / 2
+        mouse_x, mouse_y = event.x - offset_x, event.y - offset_y
+
+        if not (0 <= mouse_x < img_w and 0 <= mouse_y < img_h):
+            self._limpar_info_pixel()
+            return
+
+        orig_w, orig_h = imagem_pil.size
+        scale_x, scale_y = orig_w / img_w, orig_h / img_h
+        real_x, real_y = int(mouse_x * scale_x), int(mouse_y * scale_y)
+
+        for i, row_lbl in enumerate(self.pixel_grid_labels):
+            for j, lbl in enumerate(row_lbl):
+                nx, ny = real_x -1 + j, real_y -1 + i
+                # Cor de fundo para o pixel central
+                bg_color = ("#335B85", "#223E5C") if i == 1 and j == 1 else "transparent"
+                lbl.configure(fg_color=bg_color)
+                if 0 <= nx < orig_w and 0 <= ny < orig_h:
+                    lbl.configure(text=str(imagem_pil.getpixel((nx, ny))))
+                else:
+                    lbl.configure(text="")
+
+    def _limpar_info_pixel(self, event=None):
+        for i in range(3):
+            for j in range(3): 
+                self.pixel_grid_labels[i][j].configure(text="---", fg_color="transparent")
+
+    # --- Métodos de Apoio e Placeholders ---
+    
+    def _exibir_imagem(self, pil_image, label_widget):
+        """Redimensiona, exibe e mantém referência da imagem."""
+        if pil_image is None:
+            label_widget.configure(image=None)
+            return None
+        
+        max_size = (600, 600) # Tamanho máximo para exibição
+        img_copy = pil_image.copy()
+        img_copy.thumbnail(max_size, Image.Resampling.LANCZOS)
+        
+        ctk_img = customtkinter.CTkImage(light_image=img_copy, dark_image=img_copy, size=img_copy.size)
+        label_widget.configure(image=ctk_img, text="")
+        label_widget.image = ctk_img # Previne garbage collection
+        return ctk_img
+
+    def _convolve_manual(self, image_array, kernel):
+        """Placeholder para sua função de convolução."""
+        print(f"-> Chamando convolução com kernel:\n{kernel}")
+        # Retorna a imagem original como padrão
+        return image_array
+
+    def _mediana_manual(self, image_array):
+        """Placeholder para sua função de filtro da mediana."""
+        print("-> Chamando filtro da mediana.")
+        # Retorna a imagem original como padrão
+        return image_array
+
 
 # --- Bloco de Execução Principal ---
 if __name__ == "__main__":
     app = customtkinter.CTk()
-    app.title("Transformações de Intensidade de Imagem")
-    app.geometry("1200x950")
+    app.title("Processador de Imagens - CustomTkinter")
+    app.geometry("1280x800")
 
-    frame = Transformation(master=app)
-    frame.pack(fill="both", expand=True, padx=10, pady=10)
+    # Cria uma aba para conter nosso frame de filtros
+    tabview = customtkinter.CTkTabview(app)
+    tabview.pack(fill="both", expand=True, padx=10, pady=10)
+    tabview.add("Filtros")
+
+    # Instancia nosso frame dentro da aba
+    frame_filtros = FiltrosFrame(master=tabview.tab("Filtros"))
+    frame_filtros.pack(fill="both", expand=True)
 
     app.mainloop()
