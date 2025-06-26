@@ -8,7 +8,7 @@ import numpy as np
 
 # A biblioteca SciPy não é mais necessária
 
-class ImageProcessorApp:
+class Filter:
     def __init__(self, root):
         self.root = root
         self.root.title("Processador de Imagens - Convolução Manual")
@@ -205,9 +205,3 @@ class ImageProcessorApp:
             messagebox.showinfo("Sucesso", f"Imagem salva com sucesso em:\n{filepath}")
         except Exception as e:
             messagebox.showerror("Erro ao Salvar", f"Ocorreu um erro: {e}")
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ImageProcessorApp(root)
-    root.mainloop()

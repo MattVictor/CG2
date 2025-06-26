@@ -56,6 +56,38 @@
     "fg_color": ["#CCCCCC","#222222"],
     "bg_color": ["#CCCCCC","#222222"]
   },
+  "CTkRadioButton": {
+    "corner_radius": 1000,
+    "border_width_checked": 6,
+    "border_width_unchecked": 3,
+    "fg_color": ["#3a7ebf", "#1f538d"],
+    "border_color": ["#3E454A", "#949A9F"],
+    "hover_color": ["#325882", "#14375e"],
+    "text_color": ["gray14", "gray84"],
+    "text_color_disabled": ["gray60", "gray45"]
+  },
+  "DropdownMenu": {
+    "fg_color": ["gray90", "gray20"],
+    "hover_color": ["gray75", "gray28"],
+    "text_color": ["gray14", "gray84"]
+  },
+  "CTkComboBox": {
+    "corner_radius": 6,
+    "border_width": 2,
+    "fg_color": ["#F9F9FA", "#343638"],
+    "border_color": ["#979DA2", "#565B5E"],
+    "button_color": ["#979DA2", "#565B5E"],
+    "button_hover_color": ["#6E7174", "#7A848D"],
+    "text_color": ["gray14", "gray84"],
+    "text_color_disabled": ["gray50", "gray45"]
+  },
+  "CTkProgressBar": {
+    "corner_radius": 1000,
+    "border_width": 0,
+    "fg_color": ["#939BA2", "#4A4D50"],
+    "progress_color": ["#3a7ebf", "#1f538d"],
+    "border_color": ["gray", "gray"]
+  },
   "CTkFont": {
     "macOS": {
       "family": "SF Display",

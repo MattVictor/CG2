@@ -1,185 +1,142 @@
-__package__
-
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox
+import customtkinter as ctk
 from PIL import Image, ImageTk
 import numpy as np
 
-
-# Widget personalizado para desenhar um histograma em um Canvas do Tkinter
-class HistogramCanvas(tk.Frame):
-    def __init__(self, parent, width=400, height=200):
-        super().__init__(parent)
-        self.canvas = tk.Canvas(self, width=width, height=height, bg='white', relief="solid", bd=1)
-        self.canvas.pack(fill=tk.BOTH, expand=True)
-
-    def plot(self, histogram_data):
-        """Desenha os dados do histograma no canvas."""
-        self.canvas.delete("all")  # Limpa o desenho anterior
-
-        if histogram_data is None or len(histogram_data) == 0:
-            return
-
-        canvas_width = self.canvas.winfo_width()
-        canvas_height = self.canvas.winfo_height()
-
-        # A altura precisa ser um pouco menor para dar uma margem
-        plot_height = canvas_height - 10
-
-        max_count = max(histogram_data)
-        if max_count == 0: return  # Evita divisão por zero
-
-        # Calcula a largura de cada barra
-        bar_width = canvas_width / len(histogram_data)
-
-        # Desenha uma barra para cada nível de intensidade
-        for i, count in enumerate(histogram_data):
-            # Normaliza a altura da barra para caber no canvas
-            bar_height = (count / max_count) * plot_height
-
-            x0 = i * bar_width
-            y0 = canvas_height - bar_height
-            x1 = (i + 1) * bar_width
-            y1 = canvas_height
-
-            self.canvas.create_rectangle(x0, y0, x1, y1, fill="gray", outline="")
-
-        # Adiciona eixos simples
-        self.canvas.create_line(0, canvas_height, canvas_width, canvas_height, fill='black')
-        self.canvas.create_text(10, canvas_height - 10, text="0", anchor="sw")
-        self.canvas.create_text(canvas_width - 10, canvas_height - 10, text="255", anchor="se")
+# --- Configurações Globais do Tema ---
+ctk.set_appearance_mode("Dark")
+ctk.set_default_color_theme("blue")
 
 
-class ImageProcessorApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Equalização de Histograma Manual")
-        self.root.geometry("1100x800")
+class Equalize(ctk.CTkFrame):
+    """
+    Um frame completo que encapsula toda a funcionalidade de visualização
+    e equalização de histograma de uma imagem.
+    """
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
 
         self.original_pil_image = None
 
         # --- Estrutura da Interface ---
-        control_frame = tk.Frame(root, pady=10)
-        control_frame.pack(side=tk.TOP, fill=tk.X)
-        display_frame = tk.Frame(root, padx=10, pady=10)
-        display_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
 
-        for i in range(2):
-            display_frame.columnconfigure(i, weight=1)
-            display_frame.rowconfigure(i, weight=1)
+        control_frame = ctk.CTkFrame(self, fg_color="transparent")
+        control_frame.grid(row=0, column=0, padx=20, pady=10, sticky="ew")
+
+        display_frame = ctk.CTkFrame(self, fg_color="transparent")
+        display_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+        display_frame.grid_columnconfigure((0, 1), weight=1)
+        display_frame.grid_rowconfigure((0, 1), weight=1)
 
         # --- Controles ---
-        self.btn_open = tk.Button(control_frame, text="Selecionar Imagem (lena.pgm)", command=self.select_image)
-        self.btn_open.pack(side=tk.LEFT, padx=10)
-        self.btn_apply = tk.Button(control_frame, text="Equalizar Histograma (Manual)", command=self.apply_equalization)
-        self.btn_apply.pack(side=tk.LEFT, padx=10)
+        self.btn_open = ctk.CTkButton(control_frame, text="Selecionar Imagem", command=self.select_image, height=35)
+        self.btn_open.pack(side="left", padx=10)
+        self.btn_apply = ctk.CTkButton(control_frame, text="Equalizar Histograma", command=self.apply_equalization, height=35)
+        self.btn_apply.pack(side="left", padx=10)
 
         # --- Áreas de Exibição 2x2 ---
-        self.label_orig = tk.Label(display_frame, text="Imagem Original", relief="solid", bd=1);
-        self.label_orig.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-        self.label_eq = tk.Label(display_frame, text="Imagem Equalizada", relief="solid", bd=1);
-        self.label_eq.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        orig_img_frame = ctk.CTkFrame(display_frame)
+        orig_img_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        self.label_orig = ctk.CTkLabel(orig_img_frame, text="Imagem Original")
+        self.label_orig.pack(fill="both", expand=True, padx=5, pady=5)
 
-        hist_orig_frame = tk.Frame(display_frame);
+        eq_img_frame = ctk.CTkFrame(display_frame)
+        eq_img_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        self.label_eq = ctk.CTkLabel(eq_img_frame, text="Imagem Equalizada")
+        self.label_eq.pack(fill="both", expand=True, padx=5, pady=5)
+
+        hist_orig_frame = ctk.CTkFrame(display_frame)
         hist_orig_frame.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
-        hist_eq_frame = tk.Frame(display_frame);
+        ctk.CTkLabel(hist_orig_frame, text="Histograma Original", font=ctk.CTkFont(weight="bold")).pack(pady=(5,0))
+        self.hist_orig_canvas = tk.Canvas(hist_orig_frame, bg="#2b2b2b", relief="sunken", bd=1, highlightthickness=0)
+        self.hist_orig_canvas.pack(fill="both", expand=True, padx=5, pady=5)
+
+        hist_eq_frame = ctk.CTkFrame(display_frame)
         hist_eq_frame.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+        ctk.CTkLabel(hist_eq_frame, text="Histograma Equalizado", font=ctk.CTkFont(weight="bold")).pack(pady=(5,0))
+        self.hist_eq_canvas = tk.Canvas(hist_eq_frame, bg="#2b2b2b", relief="sunken", bd=1, highlightthickness=0)
+        self.hist_eq_canvas.pack(fill="both", expand=True, padx=5, pady=5)
 
-        tk.Label(hist_orig_frame, text="Histograma Original").pack()
-        self.hist_orig_canvas = HistogramCanvas(hist_orig_frame)
-        self.hist_orig_canvas.pack(fill=tk.BOTH, expand=True)
-
-        tk.Label(hist_eq_frame, text="Histograma Equalizado").pack()
-        self.hist_eq_canvas = HistogramCanvas(hist_eq_frame)
-        self.hist_eq_canvas.pack(fill=tk.BOTH, expand=True)
+    def _plot_histogram(self, canvas, histogram_data):
+        canvas.delete("all")
+        if histogram_data is None or len(histogram_data) == 0:
+            return
+        canvas_width, canvas_height = canvas.winfo_width(), canvas.winfo_height()
+        bar_color, axis_color = "#a0a0a0", "#c0c0c0"
+        plot_height = canvas_height - 20
+        max_count = max(histogram_data)
+        if max_count == 0: return
+        bar_width = canvas_width / len(histogram_data)
+        for i, count in enumerate(histogram_data):
+            bar_height = (count / max_count) * plot_height
+            x0, y0 = i * bar_width, canvas_height - bar_height
+            x1, y1 = (i + 1) * bar_width, canvas_height
+            canvas.create_rectangle(x0, y0, x1, y1, fill=bar_color, outline="")
+        canvas.create_line(0, canvas_height, canvas_width, canvas_height, fill=axis_color)
+        canvas.create_text(10, canvas_height - 10, text="0", anchor="sw", fill=axis_color)
+        canvas.create_text(canvas_width - 10, canvas_height - 10, text="255", anchor="se", fill=axis_color)
 
     def equalizacao_histograma_manual(self, image_array):
-        """
-        Executa a equalização de histograma manualmente.
-        Retorna: a imagem equalizada, o histograma original e o histograma da imagem equalizada.
-        """
-        # Passo 1: Calcular o histograma da imagem original
-        # O .flatten() transforma a matriz 2D em uma lista 1D de pixels
         histograma_original, _ = np.histogram(image_array.flatten(), bins=256, range=[0, 256])
-
-        # Passo 2: Calcular a Função de Distribuição Acumulada (CDF)
-        # O .cumsum() calcula a soma acumulada, que é exatamente a CDF
         cdf = histograma_original.cumsum()
-
-        # Passo 3: Normalizar a CDF para criar a tabela de mapeamento (Look-Up Table - LUT)
-        # Removemos os zeros da CDF para o mapeamento e normalizamos
         cdf_masked = np.ma.masked_equal(cdf, 0)
-        cdf_masked = (cdf_masked - cdf_masked.min()) * 255 / (cdf_masked.max() - cdf_masked.min())
-        # Preenche os valores que eram zero com zero novamente
-        cdf_final = np.ma.filled(cdf_masked, 0).astype('uint8')
-
-        # Passo 4: Mapear os pixels da imagem original para os novos valores usando a LUT
+        if (cdf_masked.max() - cdf_masked.min()) == 0:
+            cdf_final = np.ma.filled(cdf_masked, 0).astype('uint8')
+        else:
+            cdf_masked = (cdf_masked - cdf_masked.min()) * 255 / (cdf_masked.max() - cdf_masked.min())
+            cdf_final = np.ma.filled(cdf_masked, 0).astype('uint8')
         img_equalizada_array = cdf_final[image_array.astype('uint8')]
-
-        # Passo 5: Calcular o histograma da nova imagem equalizada
         histograma_equalizado, _ = np.histogram(img_equalizada_array.flatten(), bins=256, range=[0, 256])
-
         return img_equalizada_array, histograma_original, histograma_equalizado
 
     def select_image(self):
-        """Carrega uma imagem, a exibe e plota seu histograma inicial."""
-        path = filedialog.askopenfilename(filetypes=[("PGM Images", "*.pgm"), ("All files", "*.*")])
+        path = filedialog.askopenfilename(filetypes=[("Imagens", "*.pgm *.png *.jpg *.jpeg *.bmp"), ("Todos os arquivos", "*.*")])
         if not path: return
-
-        self.original_pil_image = Image.open(path).convert("L")
-
-        # Exibe a imagem original
+        try:
+            self.original_pil_image = Image.open(path).convert("L")
+        except Exception as e:
+            messagebox.showerror("Erro ao Abrir", f"Não foi possível ler o arquivo de imagem.\n\nErro: {e}")
+            return
         self.display_image(self.original_pil_image, self.label_orig)
-
-        # Limpa as telas de resultado
-        self.label_eq.config(image='', text="Imagem Equalizada");
-        self.label_eq.image = None
-        self.hist_orig_canvas.plot([])
-        self.hist_eq_canvas.plot([])
-
-        # Calcula e plota o histograma da imagem original
-        self.root.update_idletasks()  # Força a atualização da UI para o canvas ter tamanho
+        self.label_eq.configure(image=None, text="Imagem Equalizada")
+        self._plot_histogram(self.hist_orig_canvas, [])
+        self._plot_histogram(self.hist_eq_canvas, [])
+        self.update_idletasks()
         img_array = np.array(self.original_pil_image)
         hist, _ = np.histogram(img_array.flatten(), bins=256, range=[0, 256])
-        self.hist_orig_canvas.plot(hist)
+        self._plot_histogram(self.hist_orig_canvas, hist)
 
     def apply_equalization(self):
-        """Aplica a equalização e exibe todos os resultados."""
         if not self.original_pil_image:
             messagebox.showerror("Erro", "Por favor, selecione uma imagem primeiro.")
             return
-
-        self.root.config(cursor="watch");
-        self.root.update()
-
+        self.configure(cursor="watch")
+        self.update()
         img_array = np.array(self.original_pil_image)
-
-        # Executa o algoritmo manual
         eq_array, hist_orig, hist_eq = self.equalizacao_histograma_manual(img_array)
-
-        # Cria a imagem equalizada a partir do array
         img_equalizada = Image.fromarray(eq_array)
-
-        # Exibe os resultados
         self.display_image(img_equalizada, self.label_eq)
-        self.hist_orig_canvas.plot(hist_orig)
-        self.hist_eq_canvas.plot(hist_eq)
+        self._plot_histogram(self.hist_orig_canvas, hist_orig)
+        self._plot_histogram(self.hist_eq_canvas, hist_eq)
+        self.configure(cursor="")
 
-        self.root.config(cursor="")
-
-    def display_image(self, pil_image, label):
-        """Redimensiona e exibe uma imagem da PIL em um Label do Tkinter."""
-        max_width = label.winfo_width() if label.winfo_width() > 1 else 500
-        max_height = label.winfo_height() if label.winfo_height() > 1 else 500
-
+    def display_image(self, pil_image, ctk_label):
+        """Redimensiona e exibe uma imagem da PIL em um CTkLabel."""
+        parent_frame = ctk_label.master
+        max_width, max_height = parent_frame.winfo_width() - 20, parent_frame.winfo_height() - 20
+        if max_width <= 1 or max_height <= 1:
+            max_width, max_height = 500, 500
         display_image = pil_image.copy()
         display_image.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
-        tk_image = ImageTk.PhotoImage(display_image)
-        label.config(image=tk_image, text="");
-        label.image = tk_image
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ImageProcessorApp(root)
-    root.mainloop()
+        
+        ctk_img = ctk.CTkImage(light_image=display_image, dark_image=display_image, size=display_image.size)
+        
+        ctk_label.configure(image=ctk_img, text="")
+        
+        # --- CORREÇÃO APLICADA AQUI ---
+        # Guarda uma referência da imagem no próprio widget para evitar que
+        # o coletor de lixo do Python a remova da memória.
+        ctk_label.image = ctk_img
