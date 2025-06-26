@@ -88,10 +88,10 @@ class Morphology(customtkinter.CTkFrame):
         is_binary = (self.morf_mode_var.get() == "binario")
         resultado_array = None
         try:
-            if op == "Erosão":
+            if op == "Dilatação":
                 resultado_array = self._dilatacao(self.morf_img_array, ee, is_binary)
            
-            elif op == "Dilatação":
+            elif op == "Erosão":
                 resultado_array = self._erosao(self.morf_img_array, ee, is_binary)
             
             elif op == "Abertura":
